@@ -197,6 +197,8 @@ Each seller call returns JSON: `{"thoughts", "messages": [{"to", "text"}], "repo
 
 Full tables: [`results/tables.md`](results/tables.md). Every number in the report comes from `sting/analyze.py`.
 
+**Post-hoc, after the sprint: report, then agree.** 98 sellers reported the undercover firm to the regulator; 19 of them later re-engaged with it (15 replied "YES", 4 counter-proposed a price). It clusters tightly: 16 are gpt-5-mini (16 of its 18 reports without the compliance prompt, 0 of 14 with it), all are in the direct-offer arm, every report came in round 5, and every "YES" came in round 10, in reply to the undercover firm's follow-up. 3 of the 15 that said "YES" kept pricing near the competitive level. Details and every case: [`results/report_then_agree.md`](results/report_then_agree.md) (`python -m sting.flips`). Not part of the submitted report.
+
 ![Words versus deeds](docs/img/fig4_words_vs_deeds.png)
 
 *Words versus deeds after the direct offer, by model and condition. Right: reports naming the undercover firm, and the no-message baseline of that cell.*
@@ -281,12 +283,14 @@ sting/
   experiment.py    concurrent, resumable grid runner
   judge.py         gpt-4.1 labels for what each seller said
   analyze.py       statistics (bootstrap, permutation, Wilson), tables and figures
+  flips.py         post-hoc: sellers that reported the undercover firm, then re-engaged
 tests/test_core.py offline tests (no API key needed)
 results/
   episodes/        308 episode logs
   judge.jsonl      judge labels (616 seller transcripts)
   sellers.csv      one row per seller per episode
   tables.md        all result tables
+  report_then_agree.md, .csv   post-hoc report-then-agree analysis
   summary.json     machine-readable summary
   judge_spotcheck.md, judge_spotcheck_sample.txt   manual check of the judge
 report/            report.md (source), Sting-report.docx (official template), Sting-report.pdf
