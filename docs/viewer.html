@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Episode replay · The Undercover Firm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#f7f6f3;--surface:#fff;--line:#e4e1da;--ink:#1c1b19;--ink-2:#55524b;--ink-3:#8a867c;
+ --a:#2a78d6;--b:#1baf7a;--uc:#eb6834;--report:#b42318;--sans:Inter,system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 16px 40px}
+header h1{font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+header p{margin:0;color:var(--ink-2)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font:500 13px var(--sans);color:var(--ink-2);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink-2);margin-bottom:6px}
+.meta b{color:var(--ink)}
+.legend{display:flex;gap:14px;font-size:13px;color:var(--ink-2);margin:4px 0 0}
+.sw{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+svg{width:100%;height:auto;display:block}
+.controls{display:flex;align-items:center;gap:10px;margin-top:10px}
+button.ctl{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font:600 13px var(--sans);cursor:pointer}
+input[type=range]{flex:1}
+.round{font:500 13px var(--mono);color:var(--ink-2);min-width:88px;text-align:right}
+.feed{height:520px;overflow:auto;padding-right:4px}
+.msg{border-radius:10px;padding:8px 10px;margin:8px 0;font-size:13.5px;border:1px solid var(--line);background:#fbfaf8}
+.msg .who{font:600 12px var(--sans);color:var(--ink-2);margin-bottom:2px}
+.msg.uc{border-color:#f4c3ad;background:#fdf1ea}
+.msg.report{border-color:#f1b4ae;background:#fdeceb}
+.msg.report .who{color:var(--report)}
+.rhead{font:600 12px var(--mono);color:var(--ink-3);margin-top:12px}
+.empty{color:var(--ink-3);font-size:13px}
+.price-tag{font:500 12px var(--mono);color:var(--ink-3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <header>
+  <h1>Episode replay</h1>
+  <p>Two LLM sellers and one scripted undercover firm. The undercover firm prices the same in every condition; only its private message changes. Pick an episode and press play.</p>
+ </header>
+ <div class="chips" id="chips" role="group" aria-label="Episodes"></div>
+ <div class="grid">
+  <div class="card">
+   <div class="meta" id="meta"></div>
+   <svg id="chart" viewBox="0 0 640 380" role="img" aria-label="Prices by round"></svg>
+   <div class="legend" id="legend"></div>
+   <div class="controls">
+    <button class="ctl" id="play">Play</button>
+    <button class="ctl" id="step">Step</button>
+    <input type="range" id="slider" min="1" max="16" value="16" aria-label="Round">
+    <span class="round" id="rlabel"></span>
+   </div>
+  </div>
+  <div class="card">
+   <div class="meta"><b>Private messages and regulator reports</b></div>
+   <div class="feed" id="feed"></div>
+  </div>
+ </div>
+</div>
+<script src="data/episodes.js"></script>
+<script>
+const E = window.EPISODES, q = new URLSearchParams(location.search);
+let ep = E[+(q.get("ep") || 0)] || E[0], cur = 16, timer = null;
+const speed = +(q.get("speed") || 1100);
+const $ = id => document.getElementById(id);
+const W = 640, H = 380, L = 48, R = 18, T = 14, B = 34, YMIN = 10, YMAX = 30;
+const x = r => L + (r - 1) * (W - L - R) / 15, y = p => T + (YMAX - p) * (H - T - B) / (YMAX - YMIN);
+const colors = () => ({[ep.sellers[0]]: "var(--a)", [ep.sellers[1]]: "var(--b)", [ep.undercover]: "var(--uc)"});
+const esc = s => s.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]));
+
+function chips() {
+  $("chips").innerHTML = E.map((e, i) => `<button class="chip" aria-pressed="${e === ep}" data-i="${i}">${e.model} · ${e.title}</button>`).join("");
+  $("chips").querySelectorAll(".chip").forEach(b => b.onclick = () => { stop(); ep = E[+b.dataset.i]; cur = 16; render(); });
+}
+function chart() {
+  const c = colors(), names = [...ep.sellers, ep.undercover];
+  let s = "";
+  for (let p = 10; p <= 30; p += 5) s += `<line x1="${L}" x2="${W - R}" y1="${y(p)}" y2="${y(p)}" stroke="#ece9e3"/><text x="${L - 8}" y="${y(p) + 4}" text-anchor="end" font-size="11" fill="#8a867c">$${p}</text>`;
+  [[ep.nash, "Nash"], [ep.monopoly, "Monopoly"]].forEach(([v, l]) => s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="#8a867c" stroke-dasharray="3 4"/><text x="${W - R}" y="${y(v) - 5}" text-anchor="end" font-size="11" fill="#55524b">${l} $${v.toFixed(2)}</text>`);
+  s += `<rect x="${x(4.5) - 4}" y="${T}" width="8" height="${H - T - B}" fill="#f1eee8"/><text x="${x(4.5) + 6}" y="${T + 12}" font-size="11" fill="#8a867c">message</text>`;
+  for (let r = 1; r <= 16; r += (r === 1 ? 4 : 5)) s += `<text x="${x(r)}" y="${H - 12}" text-anchor="middle" font-size="11" fill="#8a867c">${r}</text>`;
+  s += `<text x="${(L + W - R) / 2}" y="${H}" text-anchor="middle" font-size="11" fill="#8a867c">round</text>`;
+  const rs = ep.rounds.slice(0, cur);
+  names.forEach(n => {
+    const pts = rs.map(h => `${x(h.r)},${y(Math.min(YMAX, h.prices[n]))}`).join(" ");
+    const dash = n === ep.undercover ? 'stroke-dasharray="7 5"' : "";
+    s += `<polyline points="${pts}" fill="none" stroke="${c[n]}" stroke-width="2.4" stroke-linejoin="round" ${dash}/>`;
+    const last = rs[rs.length - 1];
+    if (last) s += `<circle cx="${x(last.r)}" cy="${y(Math.min(YMAX, last.prices[n]))}" r="4.5" fill="${c[n]}" stroke="#fff" stroke-width="2"/>`;
+  });
+  $("chart").innerHTML = s;
+  $("legend").innerHTML = names.map(n => `<span><span class="sw" style="background:${c[n]}"></span>${n}${n === ep.undercover ? " (undercover)" : " (LLM)"}</span>`).join("");
+}
+function feed() {
+  const c = colors();
+  let s = "";
+  ep.rounds.slice(0, cur).forEach(h => {
+    let items = "";
+    h.uc.forEach(m => items += `<div class="msg uc"><div class="who">${esc(m.from)} → each seller (read before round ${h.r + 1})</div>${esc(m.text)}</div>`);
+    ep.sellers.forEach(sn => {
+      const d = h.sellers[sn];
+      d.messages.forEach(m => items += `<div class="msg"><div class="who" style="color:${c[sn]}">${esc(sn)} → ${esc(m.to)}</div>${esc(m.text)}</div>`);
+      if (d.report) items += `<div class="msg report"><div class="who">${esc(sn)} → Competition Authority</div>${esc(d.report)}</div>`;
+    });
+    if (items) s += `<div class="rhead">Round ${h.r} <span class="price-tag">· ${ep.sellers.map(n => n.split(" ")[0] + " $" + h.prices[n].toFixed(2)).join(" · ")}</span></div>` + items;
+  });
+  $("feed").innerHTML = s || `<p class="empty">No messages yet.</p>`;
+  $("feed").scrollTop = $("feed").scrollHeight;
+}
+function render() {
+  chips();
+  $("meta").innerHTML = `<span>Model <b>${ep.model}</b></span><span>Arm <b>${ep.arm}</b></span><span>Prompt <b>${ep.persona}</b></span><span>Seed <b>${ep.seed}</b></span>`;
+  $("slider").value = cur; $("rlabel").textContent = `round ${cur}/16`;
+  chart(); feed();
+}
+function stop() { clearInterval(timer); timer = null; $("play").textContent = "Play"; }
+function play() {
+  if (timer) return stop();
+  if (cur >= 16) cur = 0;
+  $("play").textContent = "Pause";
+  timer = setInterval(() => { cur++; render(); if (cur >= 16) stop(); }, speed);
+  cur++; render();
+}
+$("play").onclick = play;
+$("step").onclick = () => { stop(); cur = cur >= 16 ? 1 : cur + 1; render(); };
+$("slider").oninput = e => { stop(); cur = +e.target.value; render(); };
+if (q.get("autoplay")) { cur = 0; render(); setTimeout(play, 600); } else render();
+</script>
+</body>
+</html>
