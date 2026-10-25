@@ -106,7 +106,7 @@ We put a trusted undercover firm into a market of LLM pricing agents and varied 
 
 - Code repository: https://github.com/ParasAdlakha/sting (harness, tests, analysis, report sources).
 - Data: all 308 episode logs with every prompt-visible message, reasoning trace and price, and the judge labels, in `results/` of the repository.
-- Other artifacts: project page and video walkthrough at https://parasadlakha.github.io/sting/. The work has no info-hazard beyond what is discussed in Appendix A.
+- Other artifacts: project page and video walkthrough: https://parasadlakha.github.io/sting/ (the work has no info-hazard beyond what is discussed in Appendix A).
 
 **Prior work disclosure.** All code was written during the sprint (23–25 October 2026). The market economics follow Calvano et al. (2020) and the seller prompt follows Fish et al. (2024); no code from the sprint starter repository is reused.
 
@@ -115,7 +115,7 @@ We put a trusted undercover firm into a market of LLM pricing agents and varied 
 - Agrawal et al. 2025. Evaluating LLM Agent Collusion in Double Auctions. arXiv:2507.01413. https://arxiv.org/abs/2507.01413
 - Berger et al. 2025. Coordination Code: Rethinking Antitrust Liability in the Age of AI Pricing. *Antitrust* magazine, ABA Antitrust Law Section, Fall 2025. https://www.americanbar.org/groups/antitrust_law/resources/magazine/2025-fall/coordination-code-rethinking-antitrust-liability-age-ai-pricing/
 - Calvano, E., Calzolari, G., Denicolò, V. & Pastorello, S. 2020. Artificial Intelligence, Algorithmic Pricing, and Collusion. *American Economic Review* 110(10). https://doi.org/10.1257/aer.20190623
-- Federal Trade Commission 2006. In the Matter of Valassis Communications, Inc., File No. 051-0008, complaint and analysis to aid public comment. https://www.ftc.gov/sites/default/files/documents/cases/2006/03/060314ana0510008.pdf
+- Federal Trade Commission 2006. Valassis Communications, Inc.; Analysis of Agreement Containing Consent Order to Aid Public Comment, File No. 051-0008. *Federal Register* 71(53), 20 March 2006. https://www.govinfo.gov/content/pkg/FR-2006-03-20/html/E6-3965.htm
 - Fish, S., Gonczarowski, Y. A. & Shorrer, R. I. 2024. Algorithmic Collusion by Large Language Models. arXiv:2404.00806. https://arxiv.org/abs/2404.00806
 - Greenblatt, R., Shlegeris, B., Sachan, K. & Roger, F. 2023. AI Control: Improving Safety Despite Intentional Subversion. ICML 2024. https://arxiv.org/abs/2312.06942
 - Harrington, J. E. 2018. Developing Competition Law for Collusion by Autonomous Artificial Agents. *Journal of Competition Law & Economics* 14(3). https://doi.org/10.1093/joclec/nhy016
